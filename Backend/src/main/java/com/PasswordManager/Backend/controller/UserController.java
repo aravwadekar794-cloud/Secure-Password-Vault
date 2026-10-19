@@ -34,6 +34,26 @@ public class UserController {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    @org.springframework.beans.factory.annotation.Value("${cookie.secure:false}")
+    private boolean cookieSecure;
+
+    @org.springframework.beans.factory.annotation.Value("${cookie.same-site:Lax}")
+    private String cookieSameSite;
+
+    private void addRefreshTokenCookie(HttpServletResponse response, String refreshToken, long maxAgeSeconds) {
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from("refreshToken", refreshToken == null ? "" : refreshToken)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/api")
+                .maxAge(maxAgeSeconds);
+
+        if (cookieSameSite != null && !cookieSameSite.isBlank()) {
+            builder.sameSite(cookieSameSite);
+        }
+
+        response.addHeader(HttpHeaders.SET_COOKIE, builder.build().toString());
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User loginUser, HttpServletResponse response) {
         try {
@@ -54,12 +74,7 @@ public class UserController {
             user.setRefreshToken(refreshToken);
             userService.save(user);
 
-            Cookie refresh = new Cookie("refreshToken", refreshToken);
-            refresh.setHttpOnly(true);
-            refresh.setSecure(false);
-            refresh.setPath("/api");
-            refresh.setMaxAge(7 * 24 * 60 * 60);
-            response.addCookie(refresh);
+            addRefreshTokenCookie(response, refreshToken, 7 * 24 * 60 * 60);
 
             System.out.println("====== LOGIN DEBUG ======");
             System.out.println("Generated AccessToken: " + token);
@@ -120,12 +135,7 @@ public class UserController {
             userService.save(user);
         });
 
-        Cookie refresh = new Cookie("refreshToken", null);
-        refresh.setHttpOnly(true);
-        refresh.setSecure(false);
-        refresh.setPath("/api");
-        refresh.setMaxAge(0);
-        response.addCookie(refresh);
+        addRefreshTokenCookie(response, "", 0);
 
         return ResponseEntity.ok("Logged out successfully");
     }

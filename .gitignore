@@ -1,0 +1,24 @@
+# OS files
+.DS_Store
+Thumbs.db
+*.log
+
+# Backend build artifacts
+Backend/target/
+Backend/.mvn/wrapper/maven-wrapper.jar
+Backend/.idea/
+Backend/*.iml
+Backend/.classpath
+Backend/.project
+Backend/.settings/
+
+# Frontend build artifacts
+Frontend/node_modules/
+Frontend/dist/
+Frontend/dist-ssr/
+Frontend/*.local
+Frontend/.env.local
+Frontend/.env.*.local
+
+# Vercel output
+.vercel

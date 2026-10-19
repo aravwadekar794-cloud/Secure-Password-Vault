@@ -1,0 +1,32 @@
+services:
+  # Spring Boot Backend Web Service
+  - type: web
+    name: password-vault-backend
+    runtime: docker
+    dockerfilePath: ./Backend/Dockerfile
+    dockerContext: ./Backend
+    plan: free
+    healthCheckPath: /api/user/login
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      # Automatically link to the Render PostgreSQL database below
+      - key: DATABASE_URL
+        fromDatabase:
+          name: password-vault-db
+          property: connectionString
+      # Allow local dev and all Vercel domains (*.vercel.app)
+      - key: CORS_ALLOWED_ORIGINS
+        value: http://localhost:5173,https://*.vercel.app
+      # Enable secure cross-site cookies for Vercel <-> Render
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAME_SITE
+        value: None
+
+# Render Managed PostgreSQL Database
+databases:
+  - name: password-vault-db
+    plan: free
+    databaseName: passwordmanagerdb
+    user: admin
