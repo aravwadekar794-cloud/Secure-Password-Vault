@@ -2,9 +2,18 @@
 import axios from "axios";
 
 const rawBackendUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_BASE_URL;
+
+// If a VITE_BACKEND_URL is set (via Vercel env var), use it.
+// Otherwise, if we're running on localhost use localhost:8080, else use the production Render URL.
+const isLocalhost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
 const baseURL = (rawBackendUrl && rawBackendUrl.trim() !== "")
   ? rawBackendUrl.trim().replace(/\/+$/, "")
-  : "http://localhost:8080";
+  : isLocalhost
+    ? "http://localhost:8080"
+    : "https://password-vault-backend-onft.onrender.com";
 
 const savedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
