@@ -63,7 +63,10 @@ export default function Dashboard() {
       setEdit(null);
     } catch (err) {
       console.error("Failed to save credential:", err);
-      alert(err.response?.data?.message || err.response?.data || "Failed to save credential. Please try again.");
+      const msg = typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || "Failed to save credential. Please try again.";
+      alert(msg);
     }
   };
 

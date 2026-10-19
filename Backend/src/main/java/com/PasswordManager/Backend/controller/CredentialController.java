@@ -20,10 +20,14 @@ public class CredentialController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<Credential> addCredential(@RequestBody Credential credential) {
+    public ResponseEntity<?> addCredential(@RequestBody Credential credential) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Credential saved = credentialService.addCredential(credential, username);
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        try {
+            Credential saved = credentialService.addCredential(credential, username);
+            return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+        }
     }
 
     @PutMapping("/change")

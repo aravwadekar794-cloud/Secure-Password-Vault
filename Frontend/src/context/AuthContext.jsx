@@ -93,13 +93,9 @@ export function AuthProvider({ children }) {
     try {
       const res = await loginRequest(username, password);
       const token = res.token;
-      const refreshToken = res.refreshToken;
 
       setAuth(token);
       console.log("🔐 AccessToken after login:", token);
-      if (refreshToken) {
-        console.log("📦 Login RefreshToken:", refreshToken);
-      }
 
       localStorage.setItem("loggedInUser", "true");
       localStorage.setItem("username", username);

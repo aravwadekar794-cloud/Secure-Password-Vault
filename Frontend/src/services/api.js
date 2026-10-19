@@ -15,12 +15,9 @@ const baseURL = (rawBackendUrl && rawBackendUrl.trim() !== "")
     ? "http://localhost:8080"
     : "https://password-vault-backend-onft.onrender.com";
 
-const savedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
 export const api = axios.create({
   baseURL,
   withCredentials: true,
-  headers: savedToken ? { Authorization: `Bearer ${savedToken}` } : {},
 });
 
 let isRefreshing = false;
@@ -64,7 +61,7 @@ api.interceptors.response.use(
             }
             return api(originalRequest);
           })
-          .catch(Promise.reject);
+          .catch((e) => Promise.reject(e));
       }
 
       isRefreshing = true;
