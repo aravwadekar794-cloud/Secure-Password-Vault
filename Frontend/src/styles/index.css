@@ -1,0 +1,19 @@
+/* ./src/styles/index.css */
+@import "tailwindcss";
+
+/* basic reset */
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+/* demo animation for the rotating strength ring */
+@keyframes rotateRing360 {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.rotate-ring {
+  transform-origin: 50% 50%;
+  animation: rotateRing360 9s linear infinite;
+}
