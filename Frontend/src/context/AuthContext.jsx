@@ -17,47 +17,77 @@ import {
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
+const decodeJwt = (token) => {
+  try {
+    const base64Url = token.split(".")[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    const storedUsername = localStorage.getItem("username");
     const loggedInUser = localStorage.getItem("loggedInUser");
-    const username = localStorage.getItem("username");
 
-    if (loggedInUser !== "true" || !username) {
+    // 1. If we have a valid non-expired token in localStorage, restore session immediately
+    if (storedToken) {
+      const payload = decodeJwt(storedToken);
+      const isExpired = payload?.exp ? payload.exp * 1000 < Date.now() : false;
+      if (!isExpired) {
+        setAuth(storedToken);
+        const role = payload?.role || "ROLE_USER";
+        const uname = payload?.sub || storedUsername;
+        setUser({ username: uname, role, isAdmin: role === "ROLE_ADMIN" });
+        setLoading(false);
+        return;
+      }
+    }
+
+    // 2. If loggedInUser is not set, finish loading
+    if (loggedInUser !== "true" || !storedUsername) {
       setLoading(false);
       return;
     }
 
+    // 3. Otherwise try to refresh token via cookie
     (async () => {
       try {
         const res = await api.post("/api/user/refresh");
-        const { token, refreshToken } = res.data;
+        const { token } = res.data;
 
-        setAuth(token);
-        console.log("🔁 Refreshed AccessToken:", token);
-        if (refreshToken) {
-          console.log("📦 Existing RefreshToken:", refreshToken);
-        }
-
-        const role = await fetchRole();
-        setUser({ username, role, isAdmin: role === "ROLE_ADMIN" });
-
-        const lastPath = localStorage.getItem("lastPath");
-        if (location.pathname === "/login" || location.pathname === "/") {
-          navigate(lastPath || "/dashboard", { replace: true });
+        if (token) {
+          setAuth(token);
+          const payload = decodeJwt(token);
+          let role = payload?.role;
+          if (!role) {
+            role = await fetchRole().catch(() => "ROLE_USER");
+          }
+          setUser({ username: storedUsername, role, isAdmin: role === "ROLE_ADMIN" });
         }
       } catch (err) {
+        console.warn("Session restoration failed:", err);
         clearAuth();
         setUser(null);
       } finally {
         setLoading(false);
       }
     })();
-  }, [navigate, location.pathname]);
+  }, []); // Run ONLY once on mount to avoid clearing session on route changes
 
   const login = async (username, password) => {
     try {
@@ -74,7 +104,11 @@ export function AuthProvider({ children }) {
       localStorage.setItem("loggedInUser", "true");
       localStorage.setItem("username", username);
 
-      const role = await fetchRole();
+      const payload = decodeJwt(token);
+      let role = payload?.role;
+      if (!role) {
+        role = await fetchRole().catch(() => "ROLE_USER");
+      }
       setUser({ username, role, isAdmin: role === "ROLE_ADMIN" });
 
       return { success: true, message: "Logged in successfully" };

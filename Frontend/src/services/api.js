@@ -6,9 +6,12 @@ const baseURL = (rawBackendUrl && rawBackendUrl.trim() !== "")
   ? rawBackendUrl.trim().replace(/\/+$/, "")
   : "http://localhost:8080";
 
+const savedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
 export const api = axios.create({
   baseURL,
   withCredentials: true,
+  headers: savedToken ? { Authorization: `Bearer ${savedToken}` } : {},
 });
 
 let isRefreshing = false;
@@ -23,7 +26,10 @@ const processQueue = (error, token = null) => {
 };
 
 api.interceptors.request.use((config) => {
-  // You may keep this if you dynamically want to skip token logic in future
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  if (token && !config.headers["Authorization"]) {
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -80,13 +86,24 @@ api.interceptors.response.use(
 
 export function setAuth(token = null) {
   if (token) {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("token", token);
+    }
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   } else {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+    }
     delete api.defaults.headers.common["Authorization"];
   }
 }
 
 export function clearAuth() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("token");
+    localStorage.removeItem("loggedInUser");
+    localStorage.removeItem("username");
+  }
   delete api.defaults.headers.common["Authorization"];
 }
 
