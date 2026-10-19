@@ -87,7 +87,7 @@ Expand **Environment Variables** and add:
 ## 🔒 Verification & Post-Deployment Checklist
 
 1. **Verify Backend Health**:
-   Open `https://<your-backend-service>.onrender.com/api/user/login` in your browser or curl it. It should respond with `HTTP 403 / Allow: POST` (confirming Tomcat is active).
+   Open `https://<your-backend-service>.onrender.com/api/health` in your browser. It should respond with `{"status":"UP","service":"secure-password-vault"}` with HTTP 200 OK.
 2. **Test Admin Login**:
    Open your Vercel URL, navigate to Login, and use the default seeded credentials:
    - **Username**: `admin`
