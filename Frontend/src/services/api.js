@@ -1,7 +1,7 @@
 // src/services/api.js
 import axios from "axios";
 
-const rawBackendUrl = import.meta.env.VITE_BACKEND_URL;
+const rawBackendUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_BASE_URL;
 const baseURL = (rawBackendUrl && rawBackendUrl.trim() !== "")
   ? rawBackendUrl.trim().replace(/\/+$/, "")
   : "http://localhost:8080";
