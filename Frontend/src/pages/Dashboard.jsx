@@ -2,6 +2,7 @@
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import Sidebar from "../components/layout/Sidebar";
 import CredentialCard from "../components/credential/CredentialCard";
@@ -14,9 +15,11 @@ import * as credSvc from "../services/credentialService";
 
 export default function Dashboard() {
   const { choose } = useTheme();
+  const { user } = useAuth();
 
   const [credentials, setCredentials] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [modal, setModal] = useState(false);
   const [edit, setEdit] = useState(null);
   const [search, setSearch] = useState("");
@@ -24,33 +27,44 @@ export default function Dashboard() {
   const [hoveredId, setHoveredId] = useState(null);
   const [recentlyEditedId, setRecentlyEditedId] = useState(null);
 
+  const loadCredentials = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await credSvc.fetchAll();
+      setCredentials(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load credentials:", err);
+      setError("Unable to load credentials from server.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const data = await credSvc.fetchAll();
-        setCredentials(Array.isArray(data) ? data : []);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+    loadCredentials();
+  }, [user?.username]);
 
   const save = async (obj) => {
-    let saved;
-    if (edit) {
-      const data = await credSvc.updateOne(edit.id, obj);
-      setCredentials((prev) => prev.map((c) => (c.id === edit.id ? data : c)));
-      saved = data;
-    } else {
-      const data = await credSvc.addOne(obj);
-      setCredentials((prev) => [...prev, data]);
-      saved = data;
+    try {
+      let saved;
+      if (edit) {
+        const data = await credSvc.updateOne(edit.id, obj);
+        setCredentials((prev) => prev.map((c) => (c.id === edit.id ? data : c)));
+        saved = data;
+      } else {
+        const data = await credSvc.addOne(obj);
+        setCredentials((prev) => [...prev, data]);
+        saved = data;
+      }
+      setRecentlyEditedId(saved.id);
+      setTimeout(() => setRecentlyEditedId(null), 2000);
+      setModal(false);
+      setEdit(null);
+    } catch (err) {
+      console.error("Failed to save credential:", err);
+      alert(err.response?.data?.message || err.response?.data || "Failed to save credential. Please try again.");
     }
-    setRecentlyEditedId(saved.id);
-    setTimeout(() => setRecentlyEditedId(null), 2000);
-    setModal(false);
-    setEdit(null);
   };
 
   const confirmDel = (id) => setDeleteId(id);
@@ -68,8 +82,8 @@ export default function Dashboard() {
     Array.isArray(credentials) && credentials.length
       ? credentials.filter(
           (c) =>
-            c.serviceName.toLowerCase().includes(search.toLowerCase()) ||
-            c.username.toLowerCase().includes(search.toLowerCase())
+            (c.serviceName || "").toLowerCase().includes(search.toLowerCase()) ||
+            (c.username || "").toLowerCase().includes(search.toLowerCase())
         )
       : [];
 
@@ -200,6 +214,16 @@ export default function Dashboard() {
 
         {loading ? (
           <p className={choose("text-gray-700", "text-gray-300")}>Loading…</p>
+        ) : error ? (
+          <div className="py-6">
+            <p className="text-red-500 mb-3">{error}</p>
+            <button
+              onClick={loadCredentials}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition"
+            >
+              Retry
+            </button>
+          </div>
         ) : filtered.length === 0 ? (
           <p className={choose("text-gray-600", "text-gray-400")}>No credentials found.</p>
         ) : (

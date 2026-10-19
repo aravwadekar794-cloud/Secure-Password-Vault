@@ -45,7 +45,7 @@ export default function CredentialCard({
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
             <span className="text-white font-bold text-lg">
-              {credential.serviceName[0].toUpperCase()}
+              {((credential.serviceName || "?")[0] || "?").toUpperCase()}
             </span>
           </div>
           <div>

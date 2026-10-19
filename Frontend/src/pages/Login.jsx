@@ -106,14 +106,14 @@ export default function Login() {
         <form className="space-y-6" onSubmit={submit}>
           <InputField
             id="email"
-            label="Email"
+            label="Username / Email"
             icon={Mail}
             value={form.email}
             onChange={(value) =>
               setForm({ ...form, email: value })
             }
-            placeholder="Enter your email"
-            autoComplete="email"
+            placeholder="Enter your username or email"
+            autoComplete="username"
           />
 
           <PasswordField
