@@ -67,7 +67,6 @@ public class SecurityConfig {
     }
 
     @SuppressWarnings("deprecation")
-    @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
